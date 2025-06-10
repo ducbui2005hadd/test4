@@ -4,7 +4,6 @@ import altair as alt
 import joblib
 import re
 from datetime import datetime
-import os
 
 # Thiết lập giao diện
 st.set_page_config(page_title="📊 Game Review Explorer", page_icon="🎮")
@@ -13,19 +12,9 @@ st.markdown("""
 Phân tích các bài đánh giá game từ người chơi thực tế, bao gồm thời lượng chơi, nhận xét, và rating.
 """)
 
-# Load mô hình và vectorizer một cách an toàn
-model, vectorizer = None, None
-model_path = "game_rating_model_compressed5.pkl"
-vectorizer_path = "tfidf_vectorizer.pkl"
-
-try:
-    if os.path.exists(model_path) and os.path.exists(vectorizer_path):
-        model = joblib.load(model_path)
-        vectorizer = joblib.load(vectorizer_path)
-    else:
-        st.warning("⚠️ Không tìm thấy mô hình hoặc vectorizer. Một số tính năng sẽ không hoạt động.")
-except Exception as e:
-    st.error(f"❌ Lỗi khi load mô hình: {e}")
+# Load mô hình và vectorizer
+model = joblib.load("game_rating_model_compressed5.pkl")
+vectorizer = joblib.load("tfidf_vectorizer.pkl")
 
 # Load dữ liệu
 CSV_PATH = "sample_pred_results10k.csv"
@@ -113,28 +102,25 @@ with st.form("review_form"):
     submitted = st.form_submit_button("Lưu đánh giá")
 
     if submitted:
-        if model is None or vectorizer is None:
-            st.error("Không thể dự đoán rating vì chưa có mô hình hoặc vectorizer.")
-        else:
-            cleaned_review = clean_text(new_review)
-            tfidf_vector = vectorizer.transform([cleaned_review])
-            predicted_rating = int(model.predict(tfidf_vector)[0])
+        cleaned_review = clean_text(new_review)
+        tfidf_vector = vectorizer.transform([cleaned_review])
+        predicted_rating = int(model.predict(tfidf_vector)[0])
 
-            new_entry = {
-                "date_posted": datetime.now().strftime("%Y-%m-%d"),
-                "funny": 0,
-                "helpful": 0,
-                "hour_played": new_playtime,
-                "recommendation": "Recommended" if new_rating >= 3 else "Not Recommended",
-                "review": new_review,
-                "title": new_title,
-                "rating": new_rating,
-                "playtime": new_playtime,
-                "review_length": len(new_review),
-                "word_count": len(new_review.split()),
-                "predicted_rating": predicted_rating
-            }
+        new_entry = {
+            "date_posted": datetime.now().strftime("%Y-%m-%d"),
+            "funny": 0,
+            "helpful": 0,
+            "hour_played": new_playtime,
+            "recommendation": "Recommended" if new_rating >= 3 else "Not Recommended",
+            "review": new_review,
+            "title": new_title,
+            "rating": new_rating,
+            "playtime": new_playtime,
+            "review_length": len(new_review),
+            "word_count": len(new_review.split()),
+            "predicted_rating": predicted_rating
+        }
 
-            new_df = pd.DataFrame([new_entry])
-            new_df.to_csv(CSV_PATH, mode='a', header=False, index=False)
-            st.success("Đánh giá mới đã được lưu thành công với rating dự đoán! Hãy tải lại trang để xem cập nhật.")
+        new_df = pd.DataFrame([new_entry])
+        new_df.to_csv(CSV_PATH, mode='a', header=False, index=False)
+        st.success("Đánh giá mới đã được lưu thành công với rating dự đoán! Hãy tải lại trang để xem cập nhật.")
