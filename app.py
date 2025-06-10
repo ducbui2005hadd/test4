@@ -28,7 +28,7 @@ except Exception as e:
     st.error(f"❌ Lỗi khi load mô hình: {e}")
 
 # Load dữ liệu
-CSV_PATH = "sample_pred_results.csv"
+CSV_PATH = "sample_pred_results10k.csv"
 
 @st.cache_data
 def load_data():
